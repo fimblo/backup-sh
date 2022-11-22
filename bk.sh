@@ -1,13 +1,7 @@
 #!/bin/bash
 
-# run as root
-# take config file, specify with -f
-# silent unless error
-# abort on error
-# do hard-link if current@ symlink exists
-
-# todo - test the rsync-homedir-excludes.txt  file
-
+# --------------------------------------------------
+# Shell functions
 trap "myExit" SIGINT SIGTERM
 myExit () {
   rm -f $config_file
@@ -18,10 +12,14 @@ dexit () {
   echo $1
   exit 1
 }
+
 vprint () {
   [[ $verbose == 1 ]] && echo "$@"
 }
 
+
+# --------------------------------------------------
+# Digest commandline options
 timestamp=$(date '+%Y%m%d-%H%M%S')
 rsync='rsync'
 verbose=0
@@ -66,12 +64,17 @@ while getopts 'vhf:' tag; do
     v) verbose=1;
   esac
 done
+
+
+# --------------------------------------------------
+# Read config file
 [[ -f $config_filename ]] || dexit "Abort: Can't find config file '$config_filename'"
-
-
 config_file=$(mktemp)
 cat $config_filename | grep -vE "^[ ]*\#" | grep . > $config_file
 
+
+# --------------------------------------------------
+# Step through config file and run each backup
 while read -r line ; do
   src_in=$(echo $line | cut -f1  -d' ')
   dst_in=$(echo $line | cut -f2  -d' ')
@@ -135,7 +138,6 @@ while read -r line ; do
       ln -s $dst_real $dst_real/../current
     fi
   fi
-
 
   # delete directory if it was a dry run
   if tail -n 2 $tmp_stdout | grep -q '(DRY RUN)' ; then
