@@ -1,4 +1,4 @@
-* bk.sh - Rsync backup wrapper with link-dest support
+* Rsync wrapper with link-dest support
 ** What is rsync?
 Rsync is a mind-bogglingly useful tool for copying/moving/archiving files from one location to another. Quoting the man page:
 
