@@ -75,7 +75,7 @@ cat $config_filename | grep -vE "^[ ]*\#" | grep . > $config_file
 
 # --------------------------------------------------
 # Step through config file and run each backup
-while read -r line ; do
+cat $config_file | while read -r line ; do
   src_in=$(echo $line | cut -f1  -d' ')
   dst_in=$(echo $line | cut -f2  -d' ')
   opt_in=$(echo $line | cut -f3- -d' ') # note the trailing dash to capture the rest
@@ -144,4 +144,4 @@ while read -r line ; do
     rm -rf "$dst_in/$unique/$timestamp"
     [[ $(find "$dst_in/$unique" | wc -l) == 1 ]] && rm -rf "$dst_in/$unique"
   fi
-done <$config_file
+done
