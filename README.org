@@ -1,0 +1,68 @@
+* bk.sh - Rsync backup wrapper with link-dest support
+** What is rsync?
+Rsync is a mind-bogglingly useful tool for copying/moving/archiving files from one location to another. Quoting the man page:
+
+#+begin_quote
+Rsync is a fast and extraordinarily versatile file copying tool. It can copy locally, to/from another host over any remote shell, or to/from a remote rsync daemon. It offers a large number of options that control every aspect of its behavior and permit very flexible specification of the set of files to be copied. It is famous for its delta-transfer algorithm, which reduces the amount of data sent over the network by sending only the differences between the source files and the existing files in the destination. Rsync is widely used for backups and mirroring and as an improved copy command for everyday use.
+#+end_quote
+** What is link-dest?
+Simply put, if you tell rsync to copy files which you've copied before, and they haven't changed in any way in the origin since you backed it up, then rsync just pretends to copy it over and instead links the file in the destination folder to the previously copied version.
+
+Mm. For a more correct explanation, look at the [[https://download.samba.org/pub/rsync/rsync.1#opt--link-dest][rsync manpage, under --link-dest]].
+
+** Why I wrote this
+I started first by writing [[https://github.com/fimblo/backup-pl][something in perl]]. After all, I was expecting to be manipulating text files, and perl is good at that.
+
+When I was almost done, I noticed that I had written a monster of a script to do a very simple thing. Though I felt happy with the code itself, I didn't want to run it on my system as root - too complicated. So I threw this together in an hour or two.
+
+I ended up using this version.
+
+** Usage 
+
+#+begin_example
+bk.sh [-h] [-v] -f <config file>
+  -h usage (this text)
+  -v verbose
+  -f config file
+#+end_example
+
+** Config file
+The config file should be whitespace separated. Lines starting with #
+and empty lines are ignored. It should have the following format:
+
+   #+begin_example
+   /path/to/src /path/to/dest   -any -rsync -options -xyz 
+   #+end_example
+
+Any text after the 2nd field are passed straight to rsync.
+
+** Examples
+*** I use the following to back up my root file system
+
+   #+begin_example
+   /          /mnt/backup     -a -x
+   #+end_example
+
+*** I back up all my private git repos on a cloud server with this command:
+
+   #+begin_example
+   gitadmin@cloudserver:/var/gitrepos /mnt/backup -a 
+   #+end_example
+
+*** Excluding stuff
+My home directory has many files which don't need backing up, so I
+have an extra file with patterns to exclude from the backup:
+
+   #+begin_example
+   /home/fimblo /mnt/backup   -a --exclude-from=stuff-to-exclude.txt
+   #+end_example
+
+**** Content of stuff-to-exclude.txt
+Here's an example of what you could add. It looks simple, but strangely, it's kind of tricky to get right. I'd experiment with rsync on the commandline before adding stuff to an exclude file.
+
+   #+begin_example
+   Dropbox
+   fimblo/.cache
+   fimblo/.config/google-chrome
+   #+end_example
+
