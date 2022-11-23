@@ -8,16 +8,6 @@ myExit () {
   rm -f $tmp_stdout
 }
 
-dexit () {
-  echo $1
-  exit 1
-}
-
-vprint () {
-  [[ $verbose == 1 ]] && echo "$@"
-}
-
-
 # --------------------------------------------------
 # Digest commandline options
 timestamp=$(date '+%Y%m%d-%H%M%S')
@@ -68,7 +58,10 @@ done
 
 # --------------------------------------------------
 # Read config file
-[[ -f $config_filename ]] || dexit "Abort: Can't find config file '$config_filename'"
+if [[ ! -f $config_filename ]] ; then
+  echo "Abort: Can't find config file '$config_filename'"
+  exit 1
+fi
 config_file=$(mktemp)
 cat $config_filename | grep -vE "^[ ]*\#" | grep . > $config_file
 
@@ -113,15 +106,16 @@ cat $config_file | while read -r line ; do
   # --------------------------------------------------
   # START MAKING CHANGES
 
-  vprint "Real target: $dst_real"
-  [[ $verbose == 1 ]] && mkdir -p $dst_real || mkdir -p $dst_real
+  [[ $verbose == 1 ]] && echo "Real target: $dst_real"
+  mkdir -p $dst_real
 
   # the command we will run
-  vprint "Command: $rsync $link_back $opt_in $src_in $dst_real"
+  command="$rsync $opt_in $link_back $src_in $dst_real"
+  [[ $verbose == 1 ]] && echo "Command: $command"
 
   # run the command
   tmp_stdout=$(mktemp)
-  $rsync $link_back $opt_in $src_in $dst_real | tee $tmp_stdout 2>&1 
+  $command | tee $tmp_stdout 2>&1 
   retval=$?
 
 
@@ -133,15 +127,15 @@ cat $config_file | while read -r line ; do
     echo $rsync exitted with code: $retval
     rm -rf $dst_real
   else
-    if [[ $verbose != 0 ]] ; then
-      rm -f $dst_in/$unique/current
-      ln -s $dst_real $dst_real/../current
-    fi
+    rm -f $dst_in/$unique/current
+    ln -s $dst_real $dst_real/../current
   fi
 
-  # delete directory if it was a dry run
+  # delete the empty directory if it was a dry run
   if tail -n 2 $tmp_stdout | grep -q '(DRY RUN)' ; then
     rm -rf "$dst_in/$unique/$timestamp"
-    [[ $(find "$dst_in/$unique" | wc -l) == 1 ]] && rm -rf "$dst_in/$unique"
+    if [[ $(find "$dst_in/$unique" | wc -l) == 1 ]] ; then
+      rm -rf "$dst_in/$unique"
+    fi
   fi
 done
